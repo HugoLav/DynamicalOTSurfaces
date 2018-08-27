@@ -57,7 +57,7 @@ def geodesic(nTime, nameFileD, mub0,mub1, cCongestion, eps, Nit, detailStudy) :
 	# Print the parameters 
 	#************************************************************************************************
 	
-	print(20*"-" + " Parameters for the computation of the geodesic " + 20*"-")
+	print(15*"-" + " Parameters for the computation of the geodesic " + 15*"-")
 
 	print("Number of discretization points in time: " + str(nTime))
 	print("Name of the mesh file: " + nameFileD)
