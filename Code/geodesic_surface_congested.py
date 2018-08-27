@@ -54,6 +54,19 @@ def geodesic(nTime, nameFileD, mub0,mub1, cCongestion, eps, Nit, detailStudy) :
 	isCongestion = (cCongestion >= 10**(-10))
 
 	#************************************************************************************************
+	# Print the parameters 
+	#************************************************************************************************
+	
+	print(20*"-" + " Parameters for the computation of the geodesic " + 20*"-")
+
+	print("Number of discretization points in time: " + str(nTime))
+	print("Name of the mesh file: " + nameFileD)
+	if isCongestion :	
+		print("Congestion parameter: " + str(cCongestion) + "\n"  )
+	else :
+		print("No regularization\n")
+	
+	#************************************************************************************************
 	# Domain Building
 	#************************************************************************************************
 
@@ -281,7 +294,7 @@ def geodesic(nTime, nameFileD, mub0,mub1, cCongestion, eps, Nit, detailStudy) :
 		# Compute the residuals ------------------------------------------------------------------ 
 		
 		# For the primal residual, just what was updated in the dual 
-		primalResidual[counterMain] =  sqrt(  scalarProductFun(A + lambdaC - dTphi, np.multiply(A + lambdaC - dTphi, areaVerticesGlobal / 3.0), geomDic  ) + scalarProductTriangles(B - dDphi, B - dDphi, geomDic)  )
+		primalResidual[counterMain] =  sqrt(  (scalarProductFun(A + lambdaC - dTphi, np.multiply(A + lambdaC - dTphi, areaVerticesGlobal / 3.0), geomDic  ) + scalarProductTriangles(B - dDphi, B - dDphi, geomDic)) / np.sum(areaTriangles)  )
 		
 		# For the residual, take the RHS of the Laplace system and conserve only BT and the dual variables mu, E 
 		dualResidualAux = np.zeros((nTime+1, nVertices))
@@ -289,7 +302,7 @@ def geodesic(nTime, nameFileD, mub0,mub1, cCongestion, eps, Nit, detailStudy) :
 		dualResidualAux += gradATime(  mu, geomDic   )
 		dualResidualAux += divergenceD( E, geomDic )
 		
-		dualResidual[counterMain] = r * sqrt(  scalarProductFun(dualResidualAux,np.multiply(dualResidualAux, areaVerticesGlobalStaggerred / 3.0), geomDic)   )
+		dualResidual[counterMain] = r * sqrt(  scalarProductFun(dualResidualAux,np.multiply(dualResidualAux, areaVerticesGlobalStaggerred / 3.0), geomDic) / np.sum(areaTriangles)   )
 		
 		# Update the parameter r -----------------------------------------------------------------
 		
