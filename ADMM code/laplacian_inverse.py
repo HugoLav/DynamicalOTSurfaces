@@ -76,7 +76,7 @@ def buildLaplacianMatrix(geomDic, eps) :
 	listFactor = []
 
 	for alpha in range(nTime+1) : 
-		factor = scspl.factorized((3.*LaplacianDMatrix - eps* scsp.eye(nVertices) +  eigenValTime[alpha] / 3 * scsp.diags([areaVertices],[0])).tocsc())
+		factor = scspl.factorized((3.*LaplacianDMatrix - eps* scsp.eye(nVertices) +  eigenValTime[alpha] / 3. * scsp.diags([areaVertices],[0])).tocsc())
 		listFactor.append(factor)
 		
 	def LaplacianAuxInvert(input) : 

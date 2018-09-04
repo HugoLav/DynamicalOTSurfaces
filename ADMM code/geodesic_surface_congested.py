@@ -179,7 +179,7 @@ def geodesic(nTime, nameFileD, mub0,mub1, cCongestion, eps, Nit, detailStudy) :
 			objectiveValue[3*counterMain] = objectiveFunctional(phi,mu,A,E,B,lambdaC,BT,geomDic,r,cCongestion,isCongestion)
 		elif (counterMain % 10) == 0 : 
 			objectiveValue[ counterMain // 10 ] = objectiveFunctional(phi,mu,A,E,B,lambdaC,BT,geomDic,r,cCongestion,isCongestion)
-		
+			
 		# Laplace problem -----------------------------------------------------------------------------
 
 		startLaplace = time.time()
@@ -194,17 +194,15 @@ def geodesic(nTime, nameFileD, mub0,mub1, cCongestion, eps, Nit, detailStudy) :
 		RHS += np.multiply( r*gradATime(  A + lambdaC, geomDic  ), areaVerticesGlobalStaggerred /3)  
 		
 		# We take the adjoint wrt tp the scalar product weighted by areas, hence the multiplication by areaVectorized
-		# RHS -=  divergenceD( np.multiply(E,areaVectorized)   )
 		RHS -=  divergenceD( E, geomDic  )	
 		RHS +=  r*divergenceD( np.multiply(B,areaVectorized), geomDic  ) 	
 		
 		# Solve the system 
-		
 		phi = 1./r * LaplacianInvert(  RHS )
 		
 		endLaplace = time.time()
 		print( "Solving the Laplace system: " + str( round( endLaplace - startLaplace, 2) ) + "s." )
-		
+				
 		if detailStudy:
 			objectiveValue[3*counterMain + 1] = objectiveFunctional(phi,mu,A,E,B,lambdaC,BT,geomDic,r,cCongestion,isCongestion)
 		
@@ -281,7 +279,7 @@ def geodesic(nTime, nameFileD, mub0,mub1, cCongestion, eps, Nit, detailStudy) :
 		if detailStudy:
 			objectiveValue[3*counterMain + 2] = objectiveFunctional(phi,mu,A,E,B,lambdaC,BT,geomDic,r,cCongestion,isCongestion)	
 		
-		# Gradient descent in (E,muTilde), i.e. in the dual ----------------------------------------------- 
+		# Gradient descent in (E,muTilde), i.e. in the dual --------------------------------------
 			
 		# No need to recompute the derivatives of phi  
 		
@@ -388,10 +386,8 @@ def scalarProductFun(a,b,geomDic) :
 def scalarProductTriangles(a,b,geomDic) :
 	"""
 	Scalar product weighted by the area of the Triangles 
-	"""
-	aux1 = np.multiply(a,b)
-	aux2 = np.multiply( aux1, geomDic['areaVectorized'] )
-	return np.sum( aux2) / geomDic['nTime'] 	
+	"""	
+	return np.sum( np.multiply( np.multiply(a,b), geomDic['areaVectorized'] ) ) / geomDic['nTime'] 	
 	
 
 #********************************************************************************************************
@@ -468,7 +464,7 @@ def divergenceD(input,geomDic) :
 	# Transpose and reshape to apply divergenceDMatrix independently for fixed first two indices 
 	outputAux = geomDic['divergenceDMatrix'].dot(inputAux.transpose()).transpose().reshape((geomDic['nTime'],2,3,geomDic['nVertices']))
 	
-	# Then sim in both time and vertex 
+	# Then sum in both time and vertex 
 	output[:-1,:] += (outputAux[:,0,0,:] + outputAux[:,0,1,:] + outputAux[:,0,2,:])
 	output[1:,:] += (outputAux[:,1,0,:] + outputAux[:,1,1,:] + outputAux[:,1,2,:])	
 	
@@ -487,7 +483,7 @@ def objectiveFunctional(phi,mu,A,E,B,lambdaC,BT,geomDic,r,cCongestion,isCongesti
 	# Boundary term 
 	output += np.dot( phi[0,:], BT[0,:] ) + np.dot( phi[-1,:], BT[-1,:] )
 	
-	# Computing the derivatives of phi and split them in D 
+	# Computing the derivatives of phi
 	dTphi = gradTime(phi,geomDic)
 	dDphi = gradientD(phi,geomDic)
 	
@@ -495,17 +491,17 @@ def objectiveFunctional(phi,mu,A,E,B,lambdaC,BT,geomDic,r,cCongestion,isCongesti
 	output += scalarProductFun( A + lambdaC - dTphi, mu, geomDic )
 	
 	# Lagrange multiplier E. 
-	output += np.sum(  np.multiply(   B - dDphi, E )) 
+	output += np.sum(  np.multiply(   B - dDphi, E )) / geomDic['nTime'] 
 	
 	# Penalization in lambda, only in the case of congestion
 	if isCongestion : 
 		output -= 1/(2.*cCongestion) * scalarProductFun( lambdaC, np.multiply(lambdaC, geomDic['areaVerticesGlobal']/3.),geomDic )
 	
 	# Penalty in A, phi 
-	output -= r/2 * scalarProductFun( A + lambdaC - dTphi, np.multiply(A + lambdaC - dTphi, geomDic['areaVerticesGlobal']/3.),geomDic ) 
+	output -= r/2. * scalarProductFun( A + lambdaC - dTphi, np.multiply(A + lambdaC - dTphi, geomDic['areaVerticesGlobal']/3.),geomDic ) 
 	
 	# Penalty in B, phi. 
-	output -= r/2* scalarProductTriangles( B - dDphi, B - dDphi, geomDic )
+	output -= r/2. * scalarProductTriangles( B - dDphi, B - dDphi, geomDic )
 	
 	return output
 	

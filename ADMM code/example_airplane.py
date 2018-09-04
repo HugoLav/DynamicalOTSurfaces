@@ -1,5 +1,5 @@
 """ 
-Produce the interpolation which corresponds to Figure 2 of the article 
+Produce the interpolation which corresponds to Figure 9 of the article 
 """
 
 import os
@@ -39,7 +39,7 @@ engine.start()
 nTime = 31
 
 # Name of the file in which is stored the triangulated surface D 
-nameFileD = os.path.join("meshes", "face_vector_field_319.off")
+nameFileD = os.path.join("meshes", "airplane_62.off")
 
 # Parameter epsilon to regularize the Laplace problem 
 eps = 0.0*10**(-8)
@@ -48,10 +48,10 @@ eps = 0.0*10**(-8)
 Nit = 1000
 
 # Detailed Study: True if we compute the objective functional at every time step (slow), False in the case we compute every 10 iterations. 
-detailStudy = False 
+detailStudy = False    
 
 # Value for the congestion parameter (alpha in the article)
-cCongestion = 0.1 
+cCongestion = 0.1
 
 # -----------------------------------------------------------------------------------------------
 # Read the .off file  
@@ -75,30 +75,16 @@ nVertices = Vertices.shape[0]
 mub0 = np.zeros(nVertices)
 mub1 = np.zeros(nVertices)
 
-lengthScale = 0.1 
-
-# Center of the "blobs" for mub0 and mub1
-center0 = Vertices[4492,:]
-center1 = Vertices[4225,:]
-
 for i in range(nVertices) :
-	
-	# Change of coordinates 
-	alpha = 0.1 * Vertices[i,0] + Vertices[i,1] 
-	beta = - Vertices[i,0] + 0.1 * Vertices[i,1] 
-	gamma = Vertices[i,2]
 
-	# Define mub0
-	if gamma >= -0.1 :		
-		mub0[i] = areaVertices[i] * cut_off.f(-0.2-alpha,0.3) * cut_off.f(alpha - 0.15,0.3) * cut_off.f(0.1 - beta,0.3) * cut_off.f(beta - 0.45,0.3)
-		
-	# Define mub1 
-	mub1[i] += areaVertices[i] * exp( -lin.norm( Vertices[i,:] - center0  )**2 / lengthScale**2  )
-	mub1[i] += areaVertices[i] * exp( -lin.norm( Vertices[i,:] - center1  )**2 / lengthScale**2  )
-		
+	mub0[i] = areaVertices[i] * cut_off.f( -(Vertices[i,2] - 0.5 ), 0.3   )
+	mub1[i] = areaVertices[i] * cut_off.f( Vertices[i,2] + 0.1 , 0.3 )
+	
 # Normalization 
 mub0 /= np.sum(mub0)
 mub1 /= np.sum(mub1)
+
+	
 	
 # -----------------------------------------------------------------------------------------------
 # Call the algorithm   
@@ -120,7 +106,7 @@ plt.show()
 # Saving the results 
 # -----------------------------------------------------------------------------------------------
  
-np.savetxt("face_mu_store.txt", mu.reshape((nTime*nVertices)) )
+np.savetxt("plane_airplane_mu_store.txt", mu.reshape((nTime*nVertices)) )
 
 # -----------------------------------------------------------------------------------------------
 # Printing the results with mayavi 
@@ -131,11 +117,11 @@ np.savetxt("face_mu_store.txt", mu.reshape((nTime*nVertices)) )
 def parametersMayavi(scene) : 
 
 	# Put the right angle 
-	scene.scene.camera.position = [-0.069944662502985533, 1.2526435392885236, 3.9345675528530402]
+	scene.scene.camera.position = [0.29823056797905534, 4.0111323804742662, 1.0316426946145216]
 	scene.scene.camera.focal_point = [0.0052490000000000037, 0.06885150000000001, 0.033782499999999993]
 	scene.scene.camera.view_angle = 30.0
-	scene.scene.camera.view_up = [0.99362963464680065, -0.10108021570105792, 0.049829099384727987]
-	scene.scene.camera.clipping_range = [2.5610091024871435, 6.0229878620594661]
+	scene.scene.camera.view_up = [-0.42502075582064058, 0.25167064477965295, -0.86949367086704266]
+	scene.scene.camera.clipping_range = [3.0226920043725674, 5.4143268099719357]
 	scene.scene.camera.compute_view_plane_normal()
 	scene.scene.render()
 	
@@ -155,7 +141,7 @@ for i in [0,(nTime-1) // 4,  (nTime-1) // 2, (3*nTime-1) // 4, nTime-1] :
 	parametersMayavi(engine.scenes[0])
 
 	# Uncomment to save the figure 
-	# mlab.savefig("face_mu_" + str(i)+ ".png", size = (300,500))	
+	# mlab.savefig("airplane_mu_" + str(i) +  ".png", size = (350,480))	
 	# mlab.close()
 
 	mlab.show()
