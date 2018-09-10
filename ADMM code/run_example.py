@@ -62,7 +62,7 @@ eps = 0.0 * 10 ** (-8)
 Nit = args.niter
 # Detailed Study: True if we compute the objective functional at every time step (slow),
 # False in the case we compute every 10 iterations.
-detailStudy = False
+detailStudy = True
 # Value for the congestion parameter (alpha in the article)
 cCongestion = args.alpha
 
@@ -90,3 +90,5 @@ phi, mu, A, E, B, objectiveValue, primalResidual, dualResidual = geodesic(
 
 # Saving the results
 np.savetxt(outputFileD, mu.reshape((nTime * nVertices)))
+np.savetxt('output_phi.txt', phi.reshape(((nTime + 1) * nVertices)))
+# np.savetxt(outputFileD, phi.reshape(((nTime + 1) * nVertices)))

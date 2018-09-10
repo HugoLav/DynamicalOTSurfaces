@@ -1,5 +1,7 @@
 """ 
-Contains the function geodesic which consist in the implementation of the Algorithm described in Section 4 of "Dynamical Optimal Transport on Discrete Surfaces"
+Contains the function geodesic which consist in the implementation of the
+Algorithm described in Section 4 of "Dynamical Optimal Transport on Discrete
+Surfaces"
 """
 
 
@@ -15,47 +17,49 @@ from numpy import linalg as lin
 from math import *
 
 import read_off
-import surface_pre_computations
+from surface_pre_computations import geometricQuantities
+from surface_pre_computations import geometricMatrices
+from surface_pre_computations import trianglesToVertices
 import laplacian_inverse
 
 # Geodesic function
-def geodesic(
-    nTime,
-    nameFileD,
-    mub0,
-    mub1,
-    cCongestion,
-    eps,
-    Nit,
-    tol=1e-6,
-    detailStudy=False,
-    verbose=False):
 
+
+def geodesic(
+        nTime,
+        nameFileD,
+        mub0,
+        mub1,
+        cCongestion,
+        eps,
+        Nit,
+        detailStudy=False,
+        verbose=False,
+        tol=1e-6):
+    """Implementation of the algorithm for computing the geodesic in the Wasserstein space. 
+
+    Arguments. 
+      nTime: Number of discretization points in time 
+      nameFileD: Name of the .off file where the triangle mesh is stored 
+      mub0: initial probability distribution 
+      mub1: final probability distribution 
+      cCongestion: constant for the intensity of the regularization 
+        (alpha in the article)
+      eps: regularization parameter for the linear system inversion 
+      Nit: Number of iterations 
+      detailStudy: True if the value of the objective functional (i.e. the
+        Lagrangian) and the residuals are computed at every time step (slow),
+        false if computed every 10 iterations (fast)
+
+    Output.
+      phi,mu,A,E,B: values of the relevant quantities in the interpolation,
+        cf. the article for more details (Note: E is the momentum, denoted by m
+        in the article) objectiveValue: evolution (in term of the number of
+        iterations of the ADMM) of the objective value, ie the Lagrangian
+      primalResidual,dualResidual: evolution (in term of the number of
+        iterations of the ADMM) of primal and dual residuals, cf the article for
+        details of their computation.
     """
-        Implementation of the algorithm for computing the geodesic in the Wasserstein space. 
-        
-        Arguments. 
-          nTime: Number of discretization points in time 
-          nameFileD: Name of the .off file where the triangle mesh is stored 
-          mub0: initial probability distribution 
-          mub1: final probability distribution 
-          cCongestion: constant for the intensity of the regularization 
-            (alpha in the article)
-          eps: regularization parameter for the linear system inversion 
-          Nit: Number of iterations 
-          detailStudy: True if the value of the objective functional (i.e. the
-            Lagrangian) and the residuals are computed at every time step (slow),
-            false if computed every 10 iterations (fast)
-        
-        Output.
-          phi,mu,A,E,B: values of the relevant quantities in the interpolation,
-            cf. the article for more details (Note: E is the momentum, denoted by m
-            in the article) objectiveValue: evolution (in term of the number of
-            iterations of the ADMM) of the objective value, ie the Lagrangian
-          primalResidual,dualResidual: evolution (in term of the number of
-            iterations of the ADMM) of primal and dual residuals, cf the article for
-            details of their computation.
-        """
 
     startImport = time.time()
 
@@ -185,7 +189,8 @@ def geodesic(
     # Main Loop
     for counterMain in range(Nit):
         if verbose:
-            print(30 * "-" + " Iteration " + str(counterMain + 1) + " " + 30 * "-")
+            print(30 * "-" + " Iteration " +
+                  str(counterMain + 1) + " " + 30 * "-")
 
         if detailStudy:
             objectiveValue[3 * counterMain] = objectiveFunctional(
@@ -203,7 +208,8 @@ def geodesic(
         RHS -= BT * nTime
         RHS -= gradATime(mu, geomDic)
         RHS += np.multiply(
-            r * gradATime(A + lambdaC, geomDic), areaVerticesGlobalStaggerred / 3
+            r * gradATime(A + lambdaC,
+                          geomDic), areaVerticesGlobalStaggerred / 3
         )
         # We take the adjoint wrt tp the scalar product weighted by areas, hence the multiplication by areaVectorized
         RHS -= divergenceD(E, geomDic)
@@ -252,7 +258,8 @@ def geodesic(
         projObjective = toProjectA + bSquaredArray
         # projDiscriminating is 1 is the point needs to be projected, 0 if it is already in the convex
         projDiscriminating = (
-            np.greater(projObjective, 10 ** (-16) * np.ones((nTime, nVertices)))
+            np.greater(projObjective, 10 ** (-16) *
+                       np.ones((nTime, nVertices)))
         ).astype(float)
 
         # Newton method iteration
@@ -291,25 +298,29 @@ def geodesic(
         ).reshape((nTime, 3, nTriangles, 3))
 
         # Update of B
-        B[:, 0, :, :, :] = np.divide(toProjectB[:, 0, :, :, :], 1. - xProjTriangles)
-        B[:, 1, :, :, :] = np.divide(toProjectB[:, 1, :, :, :], 1. - xProjTriangles)
+        B[:, 0, :, :, :] = np.divide(
+            toProjectB[:, 0, :, :, :], 1. - xProjTriangles)
+        B[:, 1, :, :, :] = np.divide(
+            toProjectB[:, 1, :, :, :], 1. - xProjTriangles)
 
         # Print the info
         endProj = time.time()
-        print("Pointwise projection: " + str(round(endProj - startProj, 2)) + "s.")
-        print(
-            str(counterProj)
-            + " iterations needed; error committed: "
-            + str(np.max(projObjective))
-            + "."
-        )
+        if verbose:
+            print("Pointwise projection: " +
+                  str(round(endProj - startProj, 2)) + "s.")
+            print(
+                str(counterProj)
+                + " iterations needed; error committed: "
+                + str(np.max(projObjective))
+                + "."
+            )
 
         if detailStudy:
             objectiveValue[3 * counterMain + 2] = objectiveFunctional(
                 phi, mu, A, E, B, lambdaC, BT, geomDic, r, cCongestion, isCongestion
             )
 
-        # Gradient descent in (E,muTilde), i.e. in the dual 
+        # Gradient descent in (E,muTilde), i.e. in the dual
         # No need to recompute the derivatives of phi
         # Update for mu
         mu -= r / 3 * np.multiply(areaVerticesGlobal, A + lambdaC - dTphi)
@@ -339,13 +350,14 @@ def geodesic(
         dualResidual[counterMain] = r * sqrt(
             scalarProductFun(
                 dualResidualAux,
-                np.multiply(dualResidualAux, areaVerticesGlobalStaggerred / 3.0),
+                np.multiply(dualResidualAux,
+                            areaVerticesGlobalStaggerred / 3.0),
                 geomDic,
             )
             / np.sum(areaTriangles)
         )
-        # break early if residuals are small
-        if primalResidual < tol and dualResidual < tol:
+        # Break early if residuals are small
+        if primalResidual[counterMain] < tol and dualResidual[counterMain] < tol:
             break
         # Update the parameter r
         # cf. Boyd et al. for an explanantion of the rule
@@ -401,7 +413,8 @@ def geodesic(
                     - 1
                     / (2. * cCongestion)
                     * scalarProductFun(
-                        lambdaC, np.multiply(lambdaC, areaVerticesGlobal / 3.), geomDic
+                        lambdaC, np.multiply(
+                            lambdaC, areaVerticesGlobal / 3.), geomDic
                     )
                 )
                 print(
@@ -430,6 +443,21 @@ def geodesic(
         print(np.max(np.abs(dDphi - B)))
     endProgramm = time.time()
     print(
+        "Primal/dual residuals at end: {}/{}".format(
+            primalResidual[counterMain],
+            dualResidual[counterMain]
+        )
+    )
+    print(
+        "Congestion norm: {}".format(np.linalg.norm(lambdaC - cCongestion * mu))
+    )
+    print(
+        "Objective value at end: {}".format(objectiveValue[counterMain // 10])
+    )
+    print(
+        "Total number of iterations: {}".format(counterMain)
+    )
+    print(
         "Total time taken by the computation of the geodesic: "
         + str(round(endProgramm - startImport, 2))
         + "s."
@@ -437,50 +465,33 @@ def geodesic(
     return phi, mu, A, E, B, objectiveValue, primalResidual, dualResidual
 
 
-# ********************************************************************************************************
 # Scalar products
-# ********************************************************************************************************
 def scalarProductFun(a, b, geomDic):
+    """Scalar product between functions
     """
-        Scalar product between functions
-        """
     return np.sum(np.multiply(a, b)) / geomDic["nTime"]
 
 
 def scalarProductTriangles(a, b, geomDic):
+    """Scalar product weighted by the area of the Triangles 
     """
-        Scalar product weighted by the area of the Triangles 
-        """
     return (
         np.sum(np.multiply(np.multiply(a, b), geomDic["areaVectorized"]))
         / geomDic["nTime"]
     )
 
 
-# ********************************************************************************************************
 # Differential, averaging and projection operators
-# ********************************************************************************************************
-
-# Derivate along Time of a staggered function. Return a centered function --------------------------
-
-
 def gradTime(input, geomDic):
+    """Gradient wrt Time, ie temporal derivative 
     """
-        Gradient wrt Time, ie temporal derivative 
-        """
-
     output = (input[1:, :] - input[:-1, :]) / geomDic["DeltaTime"]
     return output
 
 
-# MINUS Adjoint of the previous operator
-
-
 def gradATime(input, geomDic):
+    """Minus adjoint of gradATime
     """
-        Minus adjoint of gradATime
-        """
-
     inputSize = input.shape
     output = np.zeros((inputSize[0] + 1, inputSize[1]))
 
@@ -491,15 +502,12 @@ def gradATime(input, geomDic):
     return output
 
 
-# Gradient with respect to D of phi
-# Takes something which has the staggering pattern of phi and returns the staggering patern of E,B
-
-
 def gradientD(input, geomDic):
+    """Gradient wrt to the space variable 
+
+    Takes something which has the staggering pattern of phi and returns the
+    staggering patern of E,B
     """
-        Gradient wrt to the space variable 
-        Takes something which has the staggering pattern of phi and returns the staggering patern of E,B
-        """
 
     output = np.zeros((geomDic["nTime"], 2, 3, geomDic["nTriangles"], 3))
 
@@ -528,14 +536,9 @@ def gradientD(input, geomDic):
     return output
 
 
-# MINUS Adjoint of the previous operator
-
-
 def divergenceD(input, geomDic):
+    """Minus adjoint of the previous operator 
     """
-        Minus adjoint of the previous operator 
-        """
-
     output = np.zeros((geomDic["nTime"] + 1, geomDic["nVertices"]))
 
     inputAux = input.reshape((6 * geomDic["nTime"], 3 * geomDic["nTriangles"]))
@@ -559,21 +562,17 @@ def divergenceD(input, geomDic):
     return output
 
 
-# ********************************************************************************************************
 # Definition of the function whose saddle point has to be found
-# ********************************************************************************************************
 def objectiveFunctional(
     phi, mu, A, E, B, lambdaC, BT, geomDic, r, cCongestion, isCongestion
 ):
+    """Computation of the objective functional, ie the Lagrangian 
     """
-        Computation of the objective functional, ie the Lagrangian 
-        """
-
     output = 0.0
 
     # Boundary term
     output += np.dot(phi[0, :], BT[0, :]) + np.dot(phi[-1, :], BT[-1, :])
-
+    objective_nonreg = output
     # Computing the derivatives of phi
     dTphi = gradTime(phi, geomDic)
     dDphi = gradientD(phi, geomDic)
@@ -586,28 +585,31 @@ def objectiveFunctional(
 
     # Penalization in lambda, only in the case of congestion
     if isCongestion:
-        output -= (
+        norm_term = sum(geomDic["areaVertices"])
+        congestion_cost = (
             1
             / (2. * cCongestion)
             * scalarProductFun(
                 lambdaC,
-                np.multiply(lambdaC, geomDic["areaVerticesGlobal"] / 3.),
+                np.multiply(lambdaC, geomDic["areaVerticesGlobal"] / norm_term),
                 geomDic,
             )
         )
-
+        output -= congestion_cost
     # Penalty in A, phi
     output -= (
         r
         / 2.
         * scalarProductFun(
             A + lambdaC - dTphi,
-            np.multiply(A + lambdaC - dTphi, geomDic["areaVerticesGlobal"] / 3.),
+            np.multiply(A + lambdaC - dTphi,
+                        geomDic["areaVerticesGlobal"] / 3.),
             geomDic,
         )
     )
 
     # Penalty in B, phi.
+    print('Objective/congestion: {}/{}'.format(objective_nonreg, congestion_cost))
     output -= r / 2. * scalarProductTriangles(B - dDphi, B - dDphi, geomDic)
 
     return output
