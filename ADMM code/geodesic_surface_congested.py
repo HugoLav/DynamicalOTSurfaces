@@ -68,10 +68,10 @@ def geodesic(
 
     if verbose:
         print(15 * "-" + " Parameters for the computation of the geodesic " + 15 * "-")
-        print("Number of discretization points in time: " + str(nTime))
-        print("Name of the mesh file: " + nameFileD)
+        print("Number of discretization points in time: {}".format(nTime))
+        print("Name of the mesh file: {}".format(nameFileD))
         if isCongestion:
-            print("Congestion parameter: " + str(cCongestion) + "\n")
+            print("Congestion parameter: {}\n".format(cCongestion))
         else:
             print("No regularization\n")
 
@@ -92,8 +92,6 @@ def geodesic(
     originTriangles, areaVertices, vertexTriangles = trianglesToVertices(
         Vertices, Triangles, areaTriangles
     )
-
-    np.savetxt("vertex_areas.txt", areaVertices)
 
     # Size of the domain D
     nVertices = Vertices.shape[0]
@@ -219,11 +217,8 @@ def geodesic(
         phi = 1. / r * LaplacianInvert(RHS)
         endLaplace = time.time()
         if verbose:
-            print(
-                "Solving the Laplace system: "
-                + str(round(endLaplace - startLaplace, 2))
-                + "s."
-            )
+            print("Solving the Laplace system: {}s.".format(
+                round(endLaplace - startLaplace, 2)))
 
         if detailStudy:
             objectiveValue[3 * counterMain + 1] = objectiveFunctional(
@@ -306,15 +301,10 @@ def geodesic(
         # Print the info
         endProj = time.time()
         if verbose:
-            print("Pointwise projection: " +
-                  str(round(endProj - startProj, 2)) + "s.")
-            print(
-                str(counterProj)
-                + " iterations needed; error committed: "
-                + str(np.max(projObjective))
-                + "."
-            )
-
+            print("Pointwise projection: {}s.".format(
+                  str(round(endProj - startProj, 2))))
+            print("{} iterations needed; error committed: .".format(
+                counterProj, np.max(projObjective)))
         if detailStudy:
             objectiveValue[3 * counterMain + 2] = objectiveFunctional(
                 phi, mu, A, E, B, lambdaC, BT, geomDic, r, cCongestion, isCongestion
@@ -369,43 +359,28 @@ def geodesic(
         if verbose:
             if detailStudy:
                 print(
-                    "Maximizing in phi, should go up: "
-                    + str(
+                    "Maximizing in phi, should go up: {}".format(
                         objectiveValue[3 * counterMain + 1]
                         - objectiveValue[3 * counterMain]
                     )
                 )
                 print(
-                    "Maximizing in A,B, should go up: "
-                    + str(
+                    "Maximizing in A,B, should go up: {}".format(
                         objectiveValue[3 * counterMain + 2]
                         - objectiveValue[3 * counterMain + 1]
                     )
                 )
                 if counterMain >= 1:
                     print(
-                        "Dual update: should go down: "
-                        + str(
+                        "Dual update: should go down: {}".format(
                             objectiveValue[3 * counterMain]
                             - objectiveValue[3 * counterMain - 1]
                         )
                     )
-            print("Values of phi:")
-            print(np.max(phi))
-            print(np.min(phi))
-
-            print("Values of A")
-            print(np.max(A))
-            print(np.min(A))
-
-            print("Values of mu")
-            print(np.max(mu))
-            print(np.min(mu))
-
-            print("Values of E")
-            print(np.max(E))
-            print(np.min(E))
-
+            print("Values of phi: {}/{}\n".format(np.max(phi), np.min(phi)))
+            print("Values of A: {}/{}\n".format(np.max(A), np.min(A)))
+            print("Values of mu: {}/{}\n".format(np.max(mu), np.min(mu)))
+            print("Values of E: {}/{}\n".format(np.max(E), np.min(E)))
             if isCongestion:
                 print("Congestion")
                 print(
@@ -426,21 +401,22 @@ def geodesic(
 
     # Print some informations at the end of the loop
     if verbose:
-        print("Final value of the augmenting parameter: " + str(r))
+        print("Final value of the augmenting parameter: {}".format(r))
         # Integral of mu wrt space (depends on time), should sum up to 1.
         intMu = np.sum(mu, axis=(-1))
-        print("Minimal and maximal value of int mu")
-        print(np.min(intMu))
-        print(np.max(intMu))
-        print("Maximal and minimal value of mu")
-        print(np.min(mu))
-        print(np.max(mu))
+        print("Minimal and maximal value of int mu: {}/{}".format(
+            np.min(intMu), np.max(intMu))
+        )
+        print("Maximal and minimal value of mu: {}/{}".format(
+            np.min(mu), np.max(mu))
+        )
 
         dTphi = gradTime(phi, geomDic)
         dDphi = gradientD(phi, geomDic)
         print("Agreement between nabla_t,D and (A,B)")
         print(np.max(np.abs(dTphi - A)))
         print(np.max(np.abs(dDphi - B)))
+
     endProgramm = time.time()
     print(
         "Primal/dual residuals at end: {}/{}".format(
@@ -449,7 +425,8 @@ def geodesic(
         )
     )
     print(
-        "Congestion norm: {}".format(np.linalg.norm(lambdaC - cCongestion * mu))
+        "Congestion norm: {}".format(np.linalg.norm(lambdaC - cCongestion *
+                                                    (mu / (areaVertices / 3))))
     )
     print(
         "Objective value at end: {}".format(objectiveValue[counterMain // 10])
@@ -458,9 +435,8 @@ def geodesic(
         "Total number of iterations: {}".format(counterMain)
     )
     print(
-        "Total time taken by the computation of the geodesic: "
-        + str(round(endProgramm - startImport, 2))
-        + "s."
+        "Total time taken by the computation of the geodesic: {}".format(
+        round(endProgramm - startImport, 2))
     )
     return phi, mu, A, E, B, objectiveValue, primalResidual, dualResidual
 
@@ -591,7 +567,7 @@ def objectiveFunctional(
             / (2. * cCongestion)
             * scalarProductFun(
                 lambdaC,
-                np.multiply(lambdaC, geomDic["areaVerticesGlobal"] / norm_term),
+                np.multiply(lambdaC, geomDic["areaVerticesGlobal"] / 3),
                 geomDic,
             )
         )
@@ -609,7 +585,6 @@ def objectiveFunctional(
     )
 
     # Penalty in B, phi.
-    print('Objective/congestion: {}/{}'.format(objective_nonreg, congestion_cost))
     output -= r / 2. * scalarProductTriangles(B - dDphi, B - dDphi, geomDic)
 
     return output
