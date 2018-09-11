@@ -19,12 +19,12 @@ Dependencies: numpy, mayavi, matplotlib, scipy
 Example: 
 
 To run a particular example, execute `example_****.py`:  
-```python
+```
 python example_airplane.py
 ```
 
 To run on a new mesh (stored as `mesh.off`) with new boundary conditions (as `mesh.bdy`), execute `run_example.py`:
-```python
+```
 python run_example.py --mesh=mesh.off --boundary=mesh.bdy
 ```
 
