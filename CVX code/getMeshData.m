@@ -23,7 +23,7 @@ mesh.name = name;
 [mesh.cotLaplacian,mesh.areaWeights] = cotLaplacian(X,T);
 
 % Change to negative cot Laplacian and rescale to area = 1
-mesh.areaWeights = mesh.areaWeights / sum(mesh.areaWeights);
+mesh.areaWeights = mesh.areaWeights;
 mesh.cotLaplacian = -1*mesh.cotLaplacian;
 
 mesh.numVertices = size(X,1);

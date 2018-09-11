@@ -25,13 +25,11 @@ load(dataFile,'M','mu0','mu1');
 % In the dual objective, there is a 1/alpha term, which is given by
 % alphaCVX. To avoid division by zero, we set alphaCVX to be large (10e6) 
 % when alpha is very small.
-if alpha <= 0.000001
+if alpha >= 0.000001
     alphaCVX = 1/alpha;
 else
     alphaCVX = 1000000;
 end
-
-alphaCVX = alpha;
 
 tic % start timer
 
@@ -98,6 +96,9 @@ cvx_end
 % Lagrangian, one must divide and multiply appropriately to obtain the 
 % interpolating 2-form.
 mu = (mu*N)./M.areaWeights;
+
+fprintf('Objective: %.12f\n', full(sum(M.areaWeights.*mu1.*phi(:,end)) - sum(M.areaWeights.*mu0.*phi(:,1))));
+fprintf('Regularization: %.12f\n', .5 * alphaCVX * regterm);
 
 runtime = toc; % end timer and record
 
