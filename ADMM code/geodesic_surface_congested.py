@@ -1,4 +1,4 @@
-""" 
+"""
 Contains the function geodesic which consist in the implementation of the
 Algorithm described in Section 4 of "Dynamical Optimal Transport on Discrete
 Surfaces"
@@ -12,7 +12,6 @@ import time
 # Mathematical functions
 import numpy as np
 import scipy.sparse as scsp
-from numpy import linalg as lin
 
 from math import *
 
@@ -36,17 +35,17 @@ def geodesic(
         detailStudy=False,
         verbose=False,
         tol=1e-6):
-    """Implementation of the algorithm for computing the geodesic in the Wasserstein space. 
+    """Implementation of the algorithm for computing the geodesic in the Wasserstein space.
 
-    Arguments. 
-      nTime: Number of discretization points in time 
-      nameFileD: Name of the .off file where the triangle mesh is stored 
-      mub0: initial probability distribution 
-      mub1: final probability distribution 
-      cCongestion: constant for the intensity of the regularization 
+    Arguments.
+      nTime: Number of discretization points in time
+      nameFileD: Name of the .off file where the triangle mesh is stored
+      mub0: initial probability distribution
+      mub1: final probability distribution
+      cCongestion: constant for the intensity of the regularization
         (alpha in the article)
-      eps: regularization parameter for the linear system inversion 
-      Nit: Number of iterations 
+      eps: regularization parameter for the linear system inversion
+      Nit: Number of iterations
       detailStudy: True if the value of the objective functional (i.e. the
         Lagrangian) and the residuals are computed at every time step (slow),
         false if computed every 10 iterations (fast)
@@ -303,7 +302,7 @@ def geodesic(
         if verbose:
             print("Pointwise projection: {}s.".format(
                   str(round(endProj - startProj, 2))))
-            print("{} iterations needed; error committed: .".format(
+            print("{} iterations needed; error committed: {}.".format(
                 counterProj, np.max(projObjective)))
         if detailStudy:
             objectiveValue[3 * counterMain + 2] = objectiveFunctional(
@@ -449,7 +448,7 @@ def scalarProductFun(a, b, geomDic):
 
 
 def scalarProductTriangles(a, b, geomDic):
-    """Scalar product weighted by the area of the Triangles 
+    """Scalar product weighted by the area of the Triangles
     """
     return (
         np.sum(np.multiply(np.multiply(a, b), geomDic["areaVectorized"]))
@@ -458,28 +457,28 @@ def scalarProductTriangles(a, b, geomDic):
 
 
 # Differential, averaging and projection operators
-def gradTime(input, geomDic):
-    """Gradient wrt Time, ie temporal derivative 
+def gradTime(mu, geomDic):
+    """Gradient wrt Time, ie temporal derivative
     """
-    output = (input[1:, :] - input[:-1, :]) / geomDic["DeltaTime"]
+    output = (mu[1:, :] - mu[:-1, :]) / geomDic["DeltaTime"]
     return output
 
 
-def gradATime(input, geomDic):
+def gradATime(mu, geomDic):
     """Minus adjoint of gradATime
     """
-    inputSize = input.shape
-    output = np.zeros((inputSize[0] + 1, inputSize[1]))
+    muSize = mu.shape
+    output = np.zeros((muSize[0] + 1, muSize[1]))
 
-    output[1:-1, :] = (input[1:, :] - input[:-1, :]) / geomDic["DeltaTime"]
-    output[0, :] = input[0, :] / geomDic["DeltaTime"]
-    output[-1, :] = -input[-1, :] / geomDic["DeltaTime"]
+    output[1:-1, :] = (mu[1:, :] - mu[:-1, :]) / geomDic["DeltaTime"]
+    output[0, :] = mu[0, :] / geomDic["DeltaTime"]
+    output[-1, :] = -mu[-1, :] / geomDic["DeltaTime"]
 
     return output
 
 
-def gradientD(input, geomDic):
-    """Gradient wrt to the space variable 
+def gradientD(mu, geomDic):
+    """Gradient wrt to the space variable
 
     Takes something which has the staggering pattern of phi and returns the
     staggering patern of E,B
@@ -490,7 +489,7 @@ def gradientD(input, geomDic):
     # We need to transpose in order to multiply by gradientDMatrix independtly for each time
     outputAux = (
         geomDic["gradientDMatrix"]
-        .dot(input.transpose())
+        .dot(mu.transpose())
         .transpose()
         .reshape((geomDic["nTime"] + 1, geomDic["nTriangles"], 3))
     )
@@ -512,17 +511,17 @@ def gradientD(input, geomDic):
     return output
 
 
-def divergenceD(input, geomDic):
-    """Minus adjoint of the previous operator 
+def divergenceD(mu, geomDic):
+    """Minus adjoint of the previous operator
     """
     output = np.zeros((geomDic["nTime"] + 1, geomDic["nVertices"]))
 
-    inputAux = input.reshape((6 * geomDic["nTime"], 3 * geomDic["nTriangles"]))
+    muAux = mu.reshape((6 * geomDic["nTime"], 3 * geomDic["nTriangles"]))
 
     # Transpose and reshape to apply divergenceDMatrix independently for fixed first two indices
     outputAux = (
         geomDic["divergenceDMatrix"]
-        .dot(inputAux.transpose())
+        .dot(muAux.transpose())
         .transpose()
         .reshape((geomDic["nTime"], 2, 3, geomDic["nVertices"]))
     )
@@ -542,7 +541,7 @@ def divergenceD(input, geomDic):
 def objectiveFunctional(
     phi, mu, A, E, B, lambdaC, BT, geomDic, r, cCongestion, isCongestion
 ):
-    """Computation of the objective functional, ie the Lagrangian 
+    """Computation of the objective functional, ie the Lagrangian
     """
     output = 0.0
 
@@ -561,7 +560,6 @@ def objectiveFunctional(
 
     # Penalization in lambda, only in the case of congestion
     if isCongestion:
-        norm_term = sum(geomDic["areaVertices"])
         congestion_cost = (
             1
             / (2. * cCongestion)
