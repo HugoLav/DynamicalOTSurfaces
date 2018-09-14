@@ -28,4 +28,4 @@ To run on a new mesh (stored as `mesh.off`) with new boundary conditions (as `me
 python run_example.py --mesh=mesh.off --boundary=mesh.bdy
 ```
 
-The `run_example.py` script has several flags that specify several of the variables from the paper.
+The `run_example.py` script has flags that specify several of the variables from the paper.
